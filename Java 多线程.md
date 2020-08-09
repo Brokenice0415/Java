@@ -316,7 +316,7 @@ public static void main(String[] args) throws Exception {
 
 运行结果
 
-<img src="C:\Users\lap\AppData\Roaming\Typora\typora-user-images\image-20200804162524439.png" alt="image-20200804162524439" style="zoom:50%; float:left" />
+<img src="img\image-20200804162524439.png" alt="image-20200804162524439" style="zoom:50%; float:left" />
 
 可以看到后面执行run方法是顺序执行，且线程名是main即主函数，也就是实质是在主线程中顺序调用执行run中的操作
 
@@ -453,13 +453,13 @@ class MyRunnable implements Runnable {
 
 运行结果
 
-<img src="C:\Users\lap\AppData\Roaming\Typora\typora-user-images\image-20200804224354287.png" alt="image-20200804224354287" style="zoom:50%; float:left" />
+<img src="img\image-20200804224354287.png" alt="image-20200804224354287" style="zoom:50%; float:left" />
 
 可以看到Thread 2在Thread 1等待期间访问同步代码块，可见wait是释放锁的
 
 将wait换成sleep，即不释放锁的情况，则运行结果如下
 
-<img src="C:\Users\lap\AppData\Roaming\Typora\typora-user-images\image-20200804224625108.png" alt="image-20200804224625108" style="zoom:50%; float:left" />
+<img src="img\image-20200804224625108.png" alt="image-20200804224625108" style="zoom:50%; float:left" />
 
 
 
@@ -983,7 +983,7 @@ public class TestThreadPool {
 
 运行结果
 
-<img src="C:\Users\lap\AppData\Roaming\Typora\typora-user-images\image-20200805162927290.png" alt="image-20200805162927290" style="zoom:50%; float:left" />
+<img src="img\image-20200805162927290.png" alt="image-20200805162927290" style="zoom:50%; float:left" />
 
 可以看到，当执行shutdown语句后，线程池仍然会等待其中的任务全部执行完毕才关闭线程池
 
