@@ -1228,7 +1228,61 @@ ThreadLocal的get和set方法源码如下
     }
 ```
 
-可以看到其中关键的是ThreadLocalMap，其作为一个HashMap，在线程复制对象时创建一个Entry，key为线程id，value即为其拥有的复制对象，当我们需要访问子线程对应的对象时即在Map中找到对应的key-value进行访问，实现互不影响
+可以看到其中关键的是ThreadLocalMap，其作为一个HashMap，在线程复制对象时创建一个Entry，key为线程id，value即为其拥有的复制对象，当我们需要访问子线程对应的对象时即在Map中找到对应的key-value进行访问，实现各线程的对象互不影响
+
+
+
+***
+
+## 信号Semaphore
+
+Semaphore是一种基于计数的信号量。它可以设定一个阀值，基于此，多个线程竞争获取许可信号，做自己的申请后归还，超过阀值后，线程申请许可信号将会被阻塞。 
+
+Semaphore可以用来构建一些对象池，资源池之类的，比如数据库连接池，我们也可以创建计数为1的Semaphore，将其作为一种类似互斥锁的机制，这也叫二元信号量，表示两种互斥状态。
+
+```java
+//模拟size为3的资源池
+public class SemaphoreTest {
+    public static void main(String[] args) {
+        Semaphore semaphore = new Semaphore(3);
+        for (int i = 1; i <= 10; i++) {
+            new Thread(new MyRunnable(semaphore), "第" + i + "个人").start();
+        }
+    }
+}
+
+class MyRunnable implements Runnable {
+    private Semaphore semaphore;
+    public MyRunnable(Semaphore semaphore) {
+        this.semaphore = semaphore;
+    }
+
+    @Override
+    public void run() {
+        String name = Thread.currentThread().getName();
+        //可用资源数
+        int availablePermits = semaphore.availablePermits();
+        if (availablePermits > 0) {
+            System.out.println(name + "无人，可用");
+        } else {
+            System.out.println(name + "有人，请排队。。。\t");
+        }
+
+        try {
+            // 如果没有拿到资源将一直等待，直到有人释放，拿到资源
+            semaphore.acquire();
+            System.out.println(name + "轮到我了");
+            // 模拟使用时间
+            Thread.sleep(1000);
+            System.out.println(name + "使用完毕\t");
+        } catch (InterruptedException e) {
+        } finally {
+            // 使用完释放资源
+            semaphore.release();
+        }
+    }
+}
+```
 
 
 
