@@ -544,7 +544,7 @@ class MyIp extends Thread{
 }
 ```
 
-#### 使用CountDownLatch
+#### CountDownLatch
 
 参考博客[java多线程对CountDownLatch的使用实例](https://www.cnblogs.com/kaituorensheng/p/9043494.html)
 
@@ -629,7 +629,7 @@ public class TestIp {
 }
 ```
 
-#### 异同点
+#### join()和CountDownLatch异同点
 
 如上两个实例可见，`join()` 可以做的 `CountDownLatch()` 也可以做到
 
@@ -689,6 +689,41 @@ public class WorkerCount2 extends Thread {
     }
 }
 ```
+
+#### CyclicBarrier
+
+与CountDownLatch相类似，也是一个同步辅助类，但是其效果不同
+
+构造与CountDownLatch相同，都是通过传参设置计数大小，但其是通过 `await()` 方法来实现计数减一的，比方说初始化为3，则需要执行三个await方法才能执行await后面的操作
+
+```java
+public class TestCyclicBarrier {
+    public static void main(String[] args) {
+        CyclicBarrier cb = new CyclicBarrier(5);
+        IntStream.range(0, 5).forEach(i -> {
+            new Thread(() -> {
+                System.out.println(Thread.currentThread().getName() + " start...");
+
+                try{
+                    cb.await();
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+
+                System.out.println(Thread.currentThread().getName() + " end...");
+            }).start();
+        });
+    }
+}
+```
+
+在这个实例中，当五个线程都执行过await方法后，才会各自开始执行输出end
+
+#### CyclicBarrier和CountDownLatch异同点
+
+两者都是同步辅助类，区别在于前者为在子线程当中控制同步，而后者在主线程控制同步
+
+控制方法也不同，前者为子线程进入await阻塞状态，计数减一，而后者为手动控制countDown方法计数减一，在主线程中进行await阻塞等待计数为0
 
 
 
@@ -1097,6 +1132,103 @@ public interface BlockingQueue<E> extends Queue<E> {
   - size 方法*不是* 一个固定时间操作。由于这些队列的异步特性，确定当前元素的数量需要遍历这些元素。
 - BlockingDeque:  BlockingQueue的双端队列版
 - LinkedBlockingDeque:  LinkedBlockingQueue的双端队列版
+
+
+
+***
+
+## ThreadLocal
+
+ThreadLocal效果类似于C中的fork函数，即创建一个对象，使各个线程各自复制该对象并互不影响
+
+```java
+public class ThreadLocalTest {
+    public static void main(String[] args) {
+        // 只创建一个对象，但是所有线程分别复制该对象，每个线程分别持有各自的对象
+        Worker worker = new Worker();
+        new Thread(new MyRunnable(worker, "A")).start();
+        new Thread(new MyRunnable(worker, "B")).start();
+        new Thread(new MyRunnable(worker, "C")).start();
+    }
+}
+
+class Worker {
+    public static ThreadLocal<Long> threadLocal = new ThreadLocal<Long>() {
+        @Override
+        protected Long initialValue() {
+            return 0L;
+        }
+    };
+
+    public String generateId(String prefix) {
+        long currentId = threadLocal.get() + 1;
+        threadLocal.set(currentId);
+        return prefix + currentId;
+    }
+}
+
+class MyRunnable implements Runnable {
+    private IdWorker idWorker;
+    private String prefix;
+    public MyRunnable(IdWorker idWorker, String prefix) {
+        this.idWorker = idWorker;
+        this.prefix = prefix;
+    }
+
+    @Override
+    public void run() {
+        for (int i = 0; i < 3; i++) {
+            System.out.println(new Date() + "\t" + Thread.currentThread().getName() + "\t" + idWorker.generateId(prefix));
+        }
+    }
+}
+```
+
+ThreadLocal的get和set方法源码如下
+
+```java
+ /**
+     * Returns the value in the current thread's copy of this
+     * thread-local variable.  If the variable has no value for the
+     * current thread, it is first initialized to the value returned
+     * by an invocation of the {@link #initialValue} method.
+     *
+     * @return the current thread's value of this thread-local
+     */
+    public T get() {
+        Thread t = Thread.currentThread();
+        ThreadLocalMap map = getMap(t);
+        if (map != null) {
+            ThreadLocalMap.Entry e = map.getEntry(this);
+            if (e != null) {
+                @SuppressWarnings("unchecked")
+                T result = (T)e.value;
+                return result;
+            }
+        }
+        return setInitialValue();
+    }
+ 
+    /**
+     * Sets the current thread's copy of this thread-local variable
+     * to the specified value.  Most subclasses will have no need to
+     * override this method, relying solely on the {@link #initialValue}
+     * method to set the values of thread-locals.
+     *
+     * @param value the value to be stored in the current thread's copy of
+     *        this thread-local.
+     */
+    public void set(T value) {
+        Thread t = Thread.currentThread();
+        ThreadLocalMap map = getMap(t);
+        if (map != null)
+            map.set(this, value);
+        else
+            createMap(t, value);
+    }
+```
+
+可以看到其中关键的是ThreadLocalMap，其作为一个HashMap，在线程复制对象时创建一个Entry，key为线程id，value即为其拥有的复制对象，当我们需要访问子线程对应的对象时即在Map中找到对应的key-value进行访问，实现互不影响
 
 
 
